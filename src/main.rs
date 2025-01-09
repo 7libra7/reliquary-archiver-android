@@ -5,6 +5,7 @@ use std::io::{BufRead, BufReader};
 use std::sync::Mutex;
 use std::time::Duration;
 
+use chrono::Local;
 use clap::Parser;
 use reliquary::network::gen::command_id::{PlayerLoginFinishScRsp, PlayerLoginScRsp};
 use reliquary::network::{ConnectionPacket, GamePacket, GameSniffer};
@@ -57,11 +58,15 @@ fn main() {
     };
 
     if let Some(export) = export {
-        let file = File::create(&args.output).unwrap();
+        let output_file = match args.output {
+            Some(out) => out,
+            _ => PathBuf::from(Local::now().format("archive_output-%Y-%m-%dT%H-%M-%S.json").to_string()),
+        };
+        let file = File::create(&output_file).unwrap();
         serde_json::to_writer_pretty(&file, &export).unwrap();
         info!(
             "wrote output to {}",
-            &args.output.canonicalize().unwrap().display()
+            output_file.canonicalize().unwrap().display()
         );
     } else {
         warn!("skipped writing output");
